@@ -35,8 +35,8 @@ let draggingId = null;
 
 const margin = 70;
 function toWorld(px, py){
-  const x = (px - margin) / (canvas.width - 2*margin) * 2 - 1;   // -1..1 (contestataire..normie)
-  const y = 1 - (py - margin) / (canvas.height - 2*margin) * 2;  // -1..1 (simple..exubérant)
+  const x = (px - margin) / (canvas.width - 2*margin) * 2 - 1;   // -1..1 (Marginal..Dominant)
+  const y = 1 - (py - margin) / (canvas.height - 2*margin) * 2;  // -1..1 (Sobre..exubérant)
   return { x: clamp(x,-1,1), y: clamp(y,-1,1) };
 }
 function toScreen(x, y){
@@ -46,8 +46,43 @@ function toScreen(x, y){
 }
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 
+function drawQuadrants(){
+  const x0 = margin, y0 = margin;
+  const w = canvas.width - 2*margin;
+  const h = canvas.height - 2*margin;
+  const midX = x0 + w/2;
+  const midY = y0 + h/2;
+
+  // 4 fonds (change les couleurs comme tu veux)
+  ctx.fillStyle = "rgba(255, 180, 180, 0.55)"; // haut-gauche
+  ctx.fillRect(x0, y0, w/2, h/2);
+
+  ctx.fillStyle = "rgba(170, 220, 255, 0.55)"; // haut-droite
+  ctx.fillRect(midX, y0, w/2, h/2);
+
+  ctx.fillStyle = "rgba(190, 235, 190, 0.55)"; // bas-gauche
+  ctx.fillRect(x0, midY, w/2, h/2);
+
+  ctx.fillStyle = "rgba(210, 190, 235, 0.55)"; // bas-droite
+  ctx.fillRect(midX, midY, w/2, h/2);
+
+  // Noms des quartiers (exemples)
+  ctx.font = "36px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.fillText("Avant-garde", x0 + w*0.12, y0 + h*0.12);          // haut-gauche
+  ctx.fillText("Bourge", x0 + w*0.88, y0 + h*0.12);       // haut-droite
+  ctx.fillText("Prolo", x0 + w*0.14, y0 + h*0.88);       // bas-gauche
+  ctx.fillText("Beige", x0 + w*0.88, y0 + h*0.88);          // bas-droite
+}
+
+
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
+	drawQuadrants();
 
   // cadre
   ctx.lineWidth = 2;
@@ -77,12 +112,12 @@ function draw(){
   ctx.font="28px system-ui";
   ctx.textAlign="center";
   ctx.fillText("Exubérant", midX, margin-28);
-  ctx.fillText("Simple", midX, canvas.height - margin + 48);
+  ctx.fillText("Sobre", midX, canvas.height - margin + 48);
 
   ctx.textAlign="left";
-  ctx.fillText("Contestataire", margin, midY - 16);
+  ctx.fillText("Marginal", margin, midY - 16);
   ctx.textAlign="right";
-  ctx.fillText("Normie", canvas.width - margin, midY - 16);
+  ctx.fillText("Dominant", canvas.width - margin, midY - 16);
 
   // points
   for (const p of points){
