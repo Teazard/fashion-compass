@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fashion Compass</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; display: grid; place-items: center; height: 100vh; background:#f6f6f6; }
+    .wrap { width: min(1000px, 95vw); }
+    canvas { width: 100%; height: auto; background: white; border: 1px solid #ddd; border-radius: 12px; }
+    .bar { display:flex; gap:8px; margin:10px 0; align-items:center; flex-wrap:wrap; }
+    button { padding:8px 10px; border-radius:10px; border:1px solid #ddd; background:white; cursor:pointer; }
+    input { padding:8px 10px; border-radius:10px; border:1px solid #ddd; }
+    small { color:#666; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="bar">
+      <input id="label" placeholder="Nom du point (ex: Goth)" />
+      <button id="clear">Tout effacer</button>
+      <button id="export">Exporter JSON</button>
+      <small>Clic = ajouter • Drag = déplacer • Double-clic = supprimer</small>
+    </div>
+    <canvas id="c" width="1200" height="700"></canvas>
+  </div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const labelInput = document.getElementById('label');
+
+let points = [];
+let draggingId = null;
+
+const margin = 70;
+function toWorld(px, py){
+  const x = (px - margin) / (canvas.width - 2*margin) * 2 - 1;   // -1..1 (contestataire..normie)
+  const y = 1 - (py - margin) / (canvas.height - 2*margin) * 2;  // -1..1 (simple..exubérant)
+  return { x: clamp(x,-1,1), y: clamp(y,-1,1) };
+}
+function toScreen(x, y){
+  const px = margin + (x + 1)/2 * (canvas.width - 2*margin);
+  const py = margin + (1 - (y + 1)/2) * (canvas.height - 2*margin);
+  return { px, py };
+}
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // cadre
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#000";
+  ctx.strokeRect(margin, margin, canvas.width-2*margin, canvas.height-2*margin);
+
+  // axes
+  const midX = canvas.width/2;
+  const midY = canvas.height/2;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(midX, margin); ctx.lineTo(midX, canvas.height-margin);
+  ctx.moveTo(margin, midY); ctx.lineTo(canvas.width-margin, midY);
+  ctx.stroke();
+
+  // flèches (simple)
+  ctx.fillStyle="#000";
+  ctx.beginPath();
+  ctx.moveTo(midX, margin-18); ctx.lineTo(midX-10, margin-2); ctx.lineTo(midX+10, margin-2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(canvas.width-margin+18, midY); ctx.lineTo(canvas.width-margin+2, midY-10); ctx.lineTo(canvas.width-margin+2, midY+10);
+  ctx.fill();
+
+  // labels axes
+  ctx.fillStyle="#000";
+  ctx.font="28px system-ui";
+  ctx.textAlign="center";
+  ctx.fillText("Exubérant", midX, margin-28);
+  ctx.fillText("Simple", midX, canvas.height - margin + 48);
+
+  ctx.textAlign="left";
+  ctx.fillText("Contestataire", margin, midY - 16);
+  ctx.textAlign="right";
+  ctx.fillText("Normie", canvas.width - margin, midY - 16);
+
+  // points
+  for (const p of points){
+    const {px, py} = toScreen(p.x, p.y);
+    ctx.beginPath();
+    ctx.fillStyle = p.color;
+    ctx.arc(px, py, 12, 0, Math.PI*2);
+    ctx.fill();
+    ctx.lineWidth=2; ctx.strokeStyle="#000"; ctx.stroke();
+
+    ctx.font="18px system-ui";
+    ctx.fillStyle="#000";
+    ctx.textAlign="left";
+    ctx.fillText(p.label, px + 16, py + 6);
+  }
+}
+
+function hitTest(px, py){
+  // retourne l'id du point le plus proche si dans un rayon
+  let best = null, bestD = 99999;
+  for (const p of points){
+    const s = toScreen(p.x, p.y);
+    const d = Math.hypot(s.px - px, s.py - py);
+    if (d < 18 && d < bestD){ best = p.id; bestD = d; }
+  }
+  return best;
+}
+
+function randColor(){
+  const hues = [10, 140, 220, 290];
+  const h = hues[Math.floor(Math.random()*hues.length)];
+  return `hsl(${h} 70% 55%)`;
+}
+
+canvas.addEventListener('pointerdown', (e)=>{
+  const r = canvas.getBoundingClientRect();
+  const px = (e.clientX - r.left) * (canvas.width / r.width);
+  const py = (e.clientY - r.top) * (canvas.height / r.height);
+
+  const hit = hitTest(px, py);
+  if (hit){
+    draggingId = hit;
+    canvas.setPointerCapture(e.pointerId);
+    return;
+  }
+
+  const w = toWorld(px, py);
+  const label = (labelInput.value || "Point").trim();
+  points.push({ id: crypto.randomUUID(), x: w.x, y: w.y, label, color: randColor() });
+  draw();
+});
+
+canvas.addEventListener('pointermove', (e)=>{
+  if (!draggingId) return;
+  const r = canvas.getBoundingClientRect();
+  const px = (e.clientX - r.left) * (canvas.width / r.width);
+  const py = (e.clientY - r.top) * (canvas.height / r.height);
+  const w = toWorld(px, py);
+
+  const p = points.find(p=>p.id===draggingId);
+  if (p){ p.x = w.x; p.y = w.y; draw(); }
+});
+
+canvas.addEventListener('pointerup', ()=>{
+  draggingId = null;
+});
+
+canvas.addEventListener('dblclick', (e)=>{
+  const r = canvas.getBoundingClientRect();
+  const px = (e.clientX - r.left) * (canvas.width / r.width);
+  const py = (e.clientY - r.top) * (canvas.height / r.height);
+  const hit = hitTest(px, py);
+  if (hit){
+    points = points.filter(p=>p.id!==hit);
+    draw();
+  }
+});
+
+document.getElementById('clear').onclick = ()=>{ points = []; draw(); };
+document.getElementById('export').onclick = ()=>{
+  const data = JSON.stringify(points, null, 2);
+  navigator.clipboard.writeText(data).catch(()=>{});
+  alert("JSON copié dans le presse-papiers !");
+};
+
+draw();
+</script>
+</body>
+</html>
