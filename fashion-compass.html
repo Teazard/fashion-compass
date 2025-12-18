@@ -19,7 +19,9 @@
     <div class="bar">
       <input id="label" placeholder="Nom du point (ex: Goth)" />
       <button id="clear">Tout effacer</button>
-      <button id="export">Exporter JSON</button>
+      <button id="export">Exporter compas</button>
+	  <textarea id="importText" rows="3" placeholder="Colle ici le compas exporté..."></textarea>
+	  <button id="importBtn">Importer</button>
       <small>Clic = ajouter • Drag = déplacer • Double-clic = supprimer</small>
     </div>
     <canvas id="c" width="1200" height="700"></canvas>
@@ -77,6 +79,64 @@ function drawQuadrants(){
   ctx.fillText("Prolo", x0 + w*0.14, y0 + h*0.88);       // bas-gauche
   ctx.fillText("Beige", x0 + w*0.88, y0 + h*0.88);          // bas-droite
 }
+function isValidPoint(p){
+  return (
+    typeof p === "object" && p !== null &&
+    typeof p.x === "number" &&
+    typeof p.y === "number" &&
+    typeof p.label === "string" &&
+    typeof p.color === "string"
+  );
+}
+
+function normalizePoint(p){
+  return {
+    id: (typeof p.id === "string" && p.id.trim()) ? p.id : crypto.randomUUID(),
+    x: clamp(p.x, -1, 1),
+    y: clamp(p.y, -1, 1),
+    label: p.label.trim() || "Point",
+    color: p.color || randColor()
+  };
+}
+
+// Fusion: si un point importé a le même id qu'un existant -> on le remplace, sinon on l'ajoute
+function mergePoints(imported){
+  const byId = new Map(points.map(p => [p.id, p]));
+
+  for (const p of imported){
+    byId.set(p.id, p);
+  }
+
+  points = Array.from(byId.values());
+  draw();
+}
+
+function importFromJsonMerge(text){
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    alert("JSON invalide");
+    return;
+  }
+
+  if (!Array.isArray(data)) {
+    alert("Le JSON doit être un tableau de points");
+    return;
+  }
+
+  const imported = [];
+  for (const p of data){
+    if (!isValidPoint(p)) {
+      alert("Format invalide: chaque point doit avoir x, y, label, color (et id optionnel)");
+      return;
+    }
+    imported.push(normalizePoint(p));
+  }
+
+  mergePoints(imported);
+}
+
 
 
 function draw(){
@@ -202,6 +262,12 @@ document.getElementById('export').onclick = ()=>{
   navigator.clipboard.writeText(data).catch(()=>{});
   alert("JSON copié dans le presse-papiers !");
 };
+document.getElementById("importBtn").onclick = () => {
+  const text = document.getElementById("importText").value.trim();
+  if (!text) return;
+  importFromJsonMerge(text);
+};
+
 
 draw();
 </script>
