@@ -5,8 +5,6 @@ Un **fashion compass interactif**, inspiré des *political compasses*, pour posi
 
 Le placement se fait librement par clic ou glisser-déposer, comme une tier list en 2D.
 
----
-
 ## Concept
 
 Le Fashion Compass repose sur deux axes :
@@ -24,8 +22,6 @@ Le Fashion Compass repose sur deux axes :
 - **Prolo** — Sobre & Marginal  
 - **Beige** — Sobre & Dominant  
 
----
-
 ## Fonctionnalités
 
 - Placement de points par clic
@@ -35,8 +31,6 @@ Le Fashion Compass repose sur deux axes :
 - Export des points en JSON
 - Import par collage de JSON (fusion automatique)
 - Composant 100% front-end (aucun backend requis)
-
----
 
 ## Format des données
 
@@ -59,8 +53,6 @@ Les données sont stockées sous forme de tableau JSON :
 * `id` est optionnel (généré automatiquement)
 * Les imports fusionnent les points existants (pas de remplacement global)
 
----
-
 ## Installation
 
 Aucune dépendance.
@@ -73,8 +65,6 @@ cd fashion-compass
 Ouvre simplement `fashion-compass.html` dans un navigateur
 ou héberge le dossier sur n’importe quel serveur statique.
 
----
-
 ## Personnalisation
 
 Tout se fait dans le fichier HTML :
@@ -85,14 +75,17 @@ Tout se fait dans le fichier HTML :
 * Typographie
 * Logique d’import/export
 
----
-
 ## Roadmap (ouvert aux suggestions)
 
-
+* relier des points pour faire des formes
 * Partage par URL
 * Tooltips explicatifs par quadrant
 * Presets / templates de styles
 * Edit des noms d'axes
 * Mode collaboratif
+
+## BONUS : Compas à importer (JSON)
+
+* mon premier essais avec des termes à mois : https://pastebin.com/SK3gDNQM
+
 
